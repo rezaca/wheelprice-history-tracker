@@ -4,15 +4,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { wheels } from "@/lib/mock-data";
 import { PriceHistoryCard } from "@/components/price-history/price-history-card";
+import { useParams } from "next/navigation";
 
-interface WheelDetailPageProps {
-  params: {
-    id: string;
-  };
-}
-
-export default function WheelDetailPage({ params }: WheelDetailPageProps) {
-  const wheel = wheels.find((w) => w.id === params.id);
+export default function WheelDetailPage() {
+  // Use the useParams hook to get the id
+  const params = useParams();
+  const id = params?.id as string;
+  
+  const wheel = wheels.find((w) => w.id === id);
   
   if (!wheel) {
     notFound();
