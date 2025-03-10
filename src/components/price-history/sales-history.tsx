@@ -1,68 +1,72 @@
 "use client";
 
-import { generateMockPriceHistory } from "@/lib/mock-data";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { format } from "date-fns";
+import { generateMockPriceHistory } from "@/lib/mock-data";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface SalesHistoryProps {
   wheelId: string;
 }
 
 interface Sale {
-  date: string;
+  date: Date;
   price: number;
   condition: string;
   seller: string;
 }
 
-function generateMockSales(wheelId: string): Sale[] {
-  const priceHistory = generateMockPriceHistory(wheelId, "1m");
-  
-  // Generate 10 mock sales with random conditions and sellers
-  return priceHistory.pricePoints.slice(0, 10).map(point => ({
-    date: point.date,
-    price: point.price,
-    condition: ["New", "Like New", "Used - Excellent", "Used - Good"][Math.floor(Math.random() * 4)],
-    seller: ["WheelDirect", "TireRack", "Fitment Industries", "Wheel Warehouse"][Math.floor(Math.random() * 4)],
-  }));
-}
-
 export function SalesHistory({ wheelId }: SalesHistoryProps) {
-  const sales = generateMockSales(wheelId);
-
-  return (
-    <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-      <h3 className="text-lg text-white mb-4">Recent Sales</h3>
+  // Generate mock sales data based on price history
+  const generateMockSales = (wheelId: string): Sale[] => {
+    const priceHistory = generateMockPriceHistory(wheelId, "3m");
+    const conditions = ["New", "Like New", "Excellent", "Good", "Fair"];
+    const sellers = ["WheelDealz", "TireKingdom", "AutoZone", "PerformancePlus", "WheelWarehouse"];
+    
+    // Create 10 sales from the last 10 price points
+    return priceHistory.pricePoints.slice(-10).map((point) => {
+      const date = new Date(point.date);
+      const randomCondition = conditions[Math.floor(Math.random() * conditions.length)];
+      const randomSeller = sellers[Math.floor(Math.random() * sellers.length)];
       
-      <div className="rounded-md border border-gray-800">
-        <Table>
-          <TableHeader>
-            <TableRow className="border-gray-800 hover:bg-transparent">
-              <TableHead className="text-gray-400">Date</TableHead>
-              <TableHead className="text-gray-400">Price</TableHead>
-              <TableHead className="text-gray-400">Condition</TableHead>
-              <TableHead className="text-gray-400">Seller</TableHead>
+      // Add some random variation to the price
+      const priceVariation = (Math.random() * 0.1) - 0.05; // -5% to +5%
+      const adjustedPrice = point.price * (1 + priceVariation);
+      
+      return {
+        date,
+        price: Math.round(adjustedPrice),
+        condition: randomCondition,
+        seller: randomSeller
+      };
+    }).reverse(); // Most recent first
+  };
+  
+  const sales = generateMockSales(wheelId);
+  
+  return (
+    <div className="mt-6 bg-gray-900 border border-gray-800 rounded-lg p-6">
+      <h3 className="text-xl text-white mb-4">Recent Sales</h3>
+      
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Date</TableHead>
+            <TableHead>Price</TableHead>
+            <TableHead>Condition</TableHead>
+            <TableHead>Seller</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {sales.map((sale, index) => (
+            <TableRow key={index}>
+              <TableCell>{format(sale.date, "MMM d, yyyy")}</TableCell>
+              <TableCell>${sale.price}</TableCell>
+              <TableCell>{sale.condition}</TableCell>
+              <TableCell>{sale.seller}</TableCell>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sales.map((sale, index) => (
-              <TableRow key={index} className="border-gray-800 hover:bg-gray-800/50">
-                <TableCell className="text-gray-300">{format(new Date(sale.date), 'MMM d, yyyy')}</TableCell>
-                <TableCell className="text-gray-300">${Math.round(sale.price)}</TableCell>
-                <TableCell className="text-gray-300">{sale.condition}</TableCell>
-                <TableCell className="text-gray-300">{sale.seller}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 } 

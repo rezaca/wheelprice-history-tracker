@@ -16,6 +16,8 @@ interface PriceHistoryCardProps {
 export function PriceHistoryCard({ wheel, className }: PriceHistoryCardProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>("6m");
   const [showSales, setShowSales] = useState(false);
+  
+  // Generate price history data directly
   const priceHistory = generateMockPriceHistory(wheel.id, timeRange);
 
   return (
