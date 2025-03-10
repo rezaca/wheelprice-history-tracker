@@ -3,31 +3,13 @@
 import { PriceHistory } from "@/lib/mock-data";
 import { format } from "date-fns";
 import { useEffect, useRef, useState } from "react";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  LineController,
-  Title,
-  Tooltip,
-  Legend,
-  TooltipItem,
-  ChartOptions
-} from 'chart.js';
 
-// Register Chart.js components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  LineController,
-  Title,
-  Tooltip,
-  Legend
-);
+// Define a type for the global Chart object
+declare global {
+  interface Window {
+    Chart: any;
+  }
+}
 
 interface ChartComponentProps {
   priceHistory: PriceHistory;
@@ -37,10 +19,20 @@ export default function ChartComponent({ priceHistory }: ChartComponentProps) {
   const chartRef = useRef<HTMLCanvasElement>(null);
   const [chartInitialized, setChartInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const chartInstance = useRef<ChartJS | null>(null);
+  const chartInstance = useRef<any>(null);
 
   useEffect(() => {
-    const initChart = async () => {
+    // Check if we're in a browser environment
+    if (typeof window === 'undefined') return;
+
+    // Check if Chart.js is loaded
+    if (!window.Chart) {
+      console.error("Chart.js not loaded");
+      setError("Chart.js not loaded");
+      return;
+    }
+
+    const initChart = () => {
       try {
         if (!chartRef.current) {
           console.error("Canvas element not found");
@@ -96,7 +88,7 @@ export default function ChartComponent({ priceHistory }: ChartComponentProps) {
               display: false,
             },
             tooltip: {
-              mode: 'index' as const,
+              mode: 'index',
               intersect: false,
               backgroundColor: '#1f2937',
               titleColor: '#fff',
@@ -106,18 +98,18 @@ export default function ChartComponent({ priceHistory }: ChartComponentProps) {
               padding: 12,
               displayColors: false,
               callbacks: {
-                title: (context: TooltipItem<'line'>[]) => {
+                title: (context: any[]) => {
                   const date = new Date(context[0].label);
                   const timeRange = priceHistory.pricePoints.length > 90 ? 'MMM yyyy' : 'MMM d, yyyy';
                   return format(date, timeRange);
                 },
-                label: (context: TooltipItem<'line'>) => `$${Math.round(context.parsed.y)}`,
+                label: (context: any) => `$${Math.round(context.parsed.y)}`,
               },
             },
           },
           scales: {
             x: {
-              type: 'category' as const,
+              type: 'category',
               grid: {
                 display: false,
               },
@@ -127,7 +119,7 @@ export default function ChartComponent({ priceHistory }: ChartComponentProps) {
                   size: 11,
                 },
                 maxRotation: 0,
-                callback: (_value: unknown, index: number) => {
+                callback: (_value: any, index: number) => {
                   const date = new Date(priceHistory.pricePoints[index].date);
                   const timeRange = priceHistory.pricePoints.length > 90 ? 'MMM yyyy' : 'MMM d';
                   return format(date, timeRange);
@@ -138,8 +130,8 @@ export default function ChartComponent({ priceHistory }: ChartComponentProps) {
               },
             },
             y: {
-              type: 'linear' as const,
-              position: 'left' as const,
+              type: 'linear',
+              position: 'left',
               grid: {
                 color: '#374151',
               },
@@ -148,7 +140,7 @@ export default function ChartComponent({ priceHistory }: ChartComponentProps) {
                 font: {
                   size: 11,
                 },
-                callback: (value: number) => `$${value}`,
+                callback: (value: any) => `$${value}`,
               },
               border: {
                 display: false,
@@ -157,14 +149,14 @@ export default function ChartComponent({ priceHistory }: ChartComponentProps) {
             },
           },
           interaction: {
-            mode: 'nearest' as const,
-            axis: 'x' as const,
+            mode: 'nearest',
+            axis: 'x',
             intersect: false,
           },
-        } as ChartOptions<'line'>;
+        };
 
-        // Create new chart
-        chartInstance.current = new ChartJS(ctx, {
+        // Create new chart using the global Chart object
+        chartInstance.current = new window.Chart(ctx, {
           type: 'line',
           data,
           options,
@@ -179,12 +171,20 @@ export default function ChartComponent({ priceHistory }: ChartComponentProps) {
       }
     };
 
-    initChart();
+    // Wait a bit to ensure Chart.js is fully loaded
+    const timer = setTimeout(() => {
+      initChart();
+    }, 500);
 
     // Cleanup function
     return () => {
+      clearTimeout(timer);
       if (chartInstance.current) {
-        chartInstance.current.destroy();
+        try {
+          chartInstance.current.destroy();
+        } catch (e) {
+          console.warn("Error destroying chart:", e);
+        }
       }
     };
   }, [priceHistory]);
