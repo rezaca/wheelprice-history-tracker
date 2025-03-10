@@ -13,7 +13,7 @@ import {
   Title,
   Tooltip,
   Legend,
-  type ChartType
+  TooltipItem
 } from 'chart.js';
 
 // Register Chart.js components
@@ -105,12 +105,12 @@ export default function ChartComponent({ priceHistory }: ChartComponentProps) {
               padding: 12,
               displayColors: false,
               callbacks: {
-                title: (context: any[]) => {
+                title: (context: TooltipItem<'line'>[]) => {
                   const date = new Date(context[0].label);
                   const timeRange = priceHistory.pricePoints.length > 90 ? 'MMM yyyy' : 'MMM d, yyyy';
                   return format(date, timeRange);
                 },
-                label: (context: any) => `$${Math.round(context.parsed.y)}`,
+                label: (context: TooltipItem<'line'>) => `$${Math.round(context.parsed.y)}`,
               },
             },
           },
@@ -126,7 +126,7 @@ export default function ChartComponent({ priceHistory }: ChartComponentProps) {
                   size: 11,
                 },
                 maxRotation: 0,
-                callback: (_value: any, index: number) => {
+                callback: (_value: unknown, index: number) => {
                   const date = new Date(priceHistory.pricePoints[index].date);
                   const timeRange = priceHistory.pricePoints.length > 90 ? 'MMM yyyy' : 'MMM d';
                   return format(date, timeRange);
@@ -147,7 +147,7 @@ export default function ChartComponent({ priceHistory }: ChartComponentProps) {
                 font: {
                   size: 11,
                 },
-                callback: (value: any) => `$${value}`,
+                callback: (value: number) => `$${value}`,
               },
               border: {
                 display: false,
