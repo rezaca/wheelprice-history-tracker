@@ -19,9 +19,9 @@ export function PriceHistoryCard({ wheel, className }: PriceHistoryCardProps) {
   
   // Generate price history data directly
   const priceHistory = generateMockPriceHistory(wheel.id, timeRange);
-
+  
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <Card className={`w-full bg-gray-900 border-gray-800 ${className}`}>
         <CardHeader>
           <div className="space-y-1">

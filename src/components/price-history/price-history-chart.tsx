@@ -1,7 +1,7 @@
 "use client";
 
 import { PriceHistory } from "@/lib/mock-data";
-import { Line } from "react-chartjs-2";
+import dynamic from "next/dynamic";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -24,6 +24,12 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend
+);
+
+// Dynamically import the Line component with SSR disabled
+const Line = dynamic(
+  () => import("react-chartjs-2").then((mod) => mod.Line),
+  { ssr: false }
 );
 
 interface PriceHistoryChartProps {
