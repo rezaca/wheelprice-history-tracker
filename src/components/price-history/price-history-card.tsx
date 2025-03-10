@@ -20,6 +20,15 @@ export function PriceHistoryCard({ wheel, className }: PriceHistoryCardProps) {
   // Generate price history data directly
   const priceHistory = generateMockPriceHistory(wheel.id, timeRange);
   
+  // Add console log to debug in production
+  console.log("Price history data:", {
+    wheelId: wheel.id,
+    timeRange,
+    pointsCount: priceHistory.pricePoints.length,
+    firstPoint: priceHistory.pricePoints[0],
+    lastPoint: priceHistory.pricePoints[priceHistory.pricePoints.length - 1]
+  });
+  
   return (
     <div className="space-y-6">
       <Card className={`w-full bg-gray-900 border-gray-800 ${className}`}>
