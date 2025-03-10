@@ -13,7 +13,8 @@ import {
   Title,
   Tooltip,
   Legend,
-  TooltipItem
+  TooltipItem,
+  ChartOptions
 } from 'chart.js';
 
 // Register Chart.js components
@@ -86,7 +87,7 @@ export default function ChartComponent({ priceHistory }: ChartComponentProps) {
           ],
         };
 
-        // Create options
+        // Create options with type assertion to fix TypeScript errors
         const options = {
           responsive: true,
           maintainAspectRatio: false,
@@ -160,7 +161,7 @@ export default function ChartComponent({ priceHistory }: ChartComponentProps) {
             axis: 'x' as const,
             intersect: false,
           },
-        };
+        } as ChartOptions<'line'>;
 
         // Create new chart
         chartInstance.current = new ChartJS(ctx, {
