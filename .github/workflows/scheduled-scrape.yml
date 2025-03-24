@@ -1,0 +1,16 @@
+name: Scheduled Scraping
+
+on:
+  schedule:
+    # Run at midnight every day
+    - cron: '0 0 * * *'
+  # Allow manual triggering
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger scraping endpoint
+        run: |
+          curl -X GET "${{ secrets.PRODUCTION_URL }}/api/cron/scrape" 
