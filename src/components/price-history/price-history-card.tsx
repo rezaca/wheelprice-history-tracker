@@ -37,8 +37,7 @@ export function PriceHistoryCard({ wheel }: PriceHistoryCardProps) {
         
         <div>
           <div className="flex flex-col">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg sm:text-xl font-medium text-gray-900">Price History</h2>
+            <div className="flex items-center justify-end">
               <TimeRangeSelector timeRange={timeRange} setTimeRange={setTimeRange} />
             </div>
             
