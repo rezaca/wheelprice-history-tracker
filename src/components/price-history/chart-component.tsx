@@ -19,6 +19,12 @@ interface TooltipContext {
   };
 }
 
+// Add more types to handle tooltips and Chart.js specifics
+interface ChartContext {
+  index: number;
+  dataIndex: number;
+}
+
 // Format currency
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -27,6 +33,14 @@ const formatCurrency = (value: number) => {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(value);
+};
+
+// Format dates in a more condensed way for mobile
+const formatDateForAxis = (dateStr: string, isMobile: boolean) => {
+  const date = parseISO(dateStr);
+  return isMobile 
+    ? format(date, 'MMM yy') // Shorter format for mobile: "May 23"
+    : format(date, 'MMM d, yyyy'); // Full format for desktop: "May 31, 2023"
 };
 
 interface ChartComponentProps {
@@ -48,20 +62,29 @@ export default function ChartComponent({ priceHistory }: ChartComponentProps) {
     const ctx = chartRef.current.getContext('2d');
     if (!ctx) return;
 
+    // Detect if we're on a mobile device
+    const isMobile = window.innerWidth < 768;
+
     // Sort data by date
     const sortedData = [...priceHistory.pricePoints].sort((a, b) => {
       return new Date(a.date).getTime() - new Date(b.date).getTime();
     });
 
-    // Prepare data for the chart - include both month, day and year for clarity
-    const labels = sortedData.map(point => format(parseISO(point.date), 'MMM d, yyyy'));
+    // Prepare data for the chart with appropriate date formatting
+    const labels = sortedData.map(point => formatDateForAxis(point.date, isMobile));
     const prices = sortedData.map(point => point.price);
+    const rawDates = sortedData.map(point => point.date); // Store original dates for tooltips
 
     // Define gradient for area under the line
     const gradient = ctx.createLinearGradient(0, 0, 0, 400);
     gradient.addColorStop(0, 'rgba(16, 185, 129, 0.2)');  // More transparent emerald at the top
     gradient.addColorStop(1, 'rgba(16, 185, 129, 0.05)'); // Nearly transparent at the bottom
 
+    // Configure maxTicksLimit based on screen size
+    const maxTicksLimit = isMobile ? 5 : 12;
+    const fontSize = isMobile ? 9 : 10;
+    const pointRadius = isMobile ? 2 : 3;
+    
     // Create chart
     chartInstance.current = new window.Chart(ctx, {
       type: 'line',
@@ -74,11 +97,11 @@ export default function ChartComponent({ priceHistory }: ChartComponentProps) {
             borderColor: 'rgb(16, 185, 129)',
             backgroundColor: gradient,
             borderWidth: 2,
-            pointRadius: 3,
+            pointRadius: pointRadius,
             pointBackgroundColor: 'rgb(16, 185, 129)',
             pointBorderColor: '#ffffff', // White for light theme
             pointBorderWidth: 2,
-            pointHoverRadius: 5,
+            pointHoverRadius: pointRadius + 2,
             pointHoverBackgroundColor: 'rgb(16, 185, 129)',
             pointHoverBorderColor: '#ffffff',
             pointHoverBorderWidth: 2,
@@ -92,10 +115,10 @@ export default function ChartComponent({ priceHistory }: ChartComponentProps) {
         maintainAspectRatio: false,
         layout: {
           padding: {
-            left: 10,
-            right: 10,
+            left: isMobile ? 5 : 10,
+            right: isMobile ? 5 : 10,
             top: 20,
-            bottom: 10
+            bottom: isMobile ? 5 : 10
           }
         },
         scales: {
@@ -103,16 +126,20 @@ export default function ChartComponent({ priceHistory }: ChartComponentProps) {
             grid: {
               color: 'rgba(209, 213, 219, 0.5)', // Lighter grid lines for light theme
               drawBorder: false,
+              // Display fewer grid lines on mobile
+              display: function(context: { index: number }) {
+                return isMobile ? context.index % 2 === 0 : true;
+              }
             },
             ticks: {
               color: 'rgb(107, 114, 128)', // Darker text for light theme
               font: {
-                size: 10
+                size: fontSize
               },
               maxRotation: 0, // No rotation for cleaner look
               minRotation: 0,
               autoSkip: true,
-              maxTicksLimit: 12, // Limit the number of ticks to avoid crowding
+              maxTicksLimit: maxTicksLimit, // Fewer ticks on mobile
             },
             border: {
               display: false
@@ -123,6 +150,10 @@ export default function ChartComponent({ priceHistory }: ChartComponentProps) {
             grid: {
               color: 'rgba(209, 213, 219, 0.5)', // Lighter grid lines for light theme
               drawBorder: false,
+              // Display fewer grid lines on mobile
+              display: function(context: { index: number }) {
+                return isMobile ? context.index % 2 === 0 : true;
+              }
             },
             border: {
               display: false
@@ -133,9 +164,11 @@ export default function ChartComponent({ priceHistory }: ChartComponentProps) {
                 return formatCurrency(value as number);
               },
               font: {
-                size: 10
+                size: fontSize
               },
-              padding: 10
+              padding: isMobile ? 5 : 10,
+              // Show fewer y-axis ticks on mobile
+              maxTicksLimit: isMobile ? 6 : 8,
             },
             min: 0, // Start from 0 to show full price context
           },
@@ -153,11 +186,15 @@ export default function ChartComponent({ priceHistory }: ChartComponentProps) {
             bodyColor: 'rgb(75, 85, 99)',
             borderColor: 'rgb(229, 231, 235)',
             borderWidth: 1,
-            padding: 12,
+            padding: isMobile ? 8 : 12,
             displayColors: false,
             callbacks: {
-              title: function() {
-                return 'Price'; // Changed from 'Sale Price' to just 'Price'
+              title: function(context: ChartContext[]) {
+                // Get the original date from our stored array
+                const dataIndex = context[0].dataIndex;
+                const originalDate = rawDates[dataIndex];
+                // Format the full date for the tooltip
+                return format(parseISO(originalDate), 'MMM d, yyyy');
               },
               label: function(context: TooltipContext) {
                 const value = context.parsed.y;
@@ -169,7 +206,24 @@ export default function ChartComponent({ priceHistory }: ChartComponentProps) {
       },
     });
 
+    // Handle window resize to update chart for responsive display
+    const handleResize = () => {
+      if (chartInstance.current) {
+        const newIsMobile = window.innerWidth < 768;
+        // Only update if mobile status changed
+        if (newIsMobile !== isMobile) {
+          chartInstance.current.destroy();
+          // Force re-render by triggering the useEffect again
+          const event = new Event('resize');
+          window.dispatchEvent(event);
+        }
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+
     return () => {
+      window.removeEventListener('resize', handleResize);
       if (chartInstance.current) {
         chartInstance.current.destroy();
       }

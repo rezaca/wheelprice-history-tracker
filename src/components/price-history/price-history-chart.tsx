@@ -51,7 +51,7 @@ export function PriceHistoryChart({ priceHistory }: PriceHistoryChartProps) {
   }, []);
 
   return (
-    <div className="h-[300px] w-full">
+    <div className="h-[250px] sm:h-[300px] w-full">
       {isClient ? (
         <ChartComponent priceHistory={priceHistory} />
       ) : (

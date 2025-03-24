@@ -21,9 +21,9 @@ export default function WheelDetailPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-6">
-          <Link href="/" className="text-gray-600 hover:text-gray-900 flex items-center">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
+        <div className="mb-4 sm:mb-6">
+          <Link href="/" className="text-gray-600 hover:text-gray-900 flex items-center text-sm sm:text-base">
             ← Back to all wheels
           </Link>
         </div>
