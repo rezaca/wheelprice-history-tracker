@@ -2,92 +2,79 @@
 
 import { useState } from "react";
 import { Wheel } from "@/lib/mock-data";
-import { generateMockPriceHistory } from "@/lib/mock-data";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { PriceHistoryChart } from "./price-history-chart";
 import { TimeRangeSelector, TimeRange } from "./time-range-selector";
+import { PriceHistoryChart } from "./price-history-chart";
+import { PriceStatistics } from "./price-statistics";
 import { SalesHistory } from "./sales-history";
+import { usePriceHistory } from "@/lib/hooks";
 
 interface PriceHistoryCardProps {
   wheel: Wheel;
-  className?: string;
 }
 
-export function PriceHistoryCard({ wheel, className }: PriceHistoryCardProps) {
+export function PriceHistoryCard({ wheel }: PriceHistoryCardProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>("6m");
-  const [showSales, setShowSales] = useState(false);
-  
-  // Generate price history data directly
-  const priceHistory = generateMockPriceHistory(wheel.id, timeRange);
-  
-  // Add console log to debug in production
-  console.log("Price history data:", {
-    wheelId: wheel.id,
-    timeRange,
-    pointsCount: priceHistory.pricePoints.length,
-    firstPoint: priceHistory.pricePoints[0],
-    lastPoint: priceHistory.pricePoints[priceHistory.pricePoints.length - 1]
-  });
+  const { data: priceHistory, loading, error } = usePriceHistory(wheel.id, timeRange);
   
   return (
-    <div className="space-y-6">
-      <Card className={`w-full bg-gray-900 border-gray-800 ${className}`}>
-        <CardHeader>
-          <div className="space-y-1">
-            <div className="text-sm text-gray-400">{wheel.name}</div>
-            <div className="flex justify-between items-center">
-              <CardTitle className="text-white text-xl">Price History</CardTitle>
-              <button 
-                onClick={() => setShowSales(!showSales)}
-                className="text-emerald-400 hover:text-emerald-300 text-sm font-medium"
-              >
-                View Sales →
-              </button>
-            </div>
-          </div>
-        </CardHeader>
-        
-        <CardContent className="space-y-6">
-          <TimeRangeSelector
-            selectedRange={timeRange}
-            onRangeChange={setTimeRange}
-          />
-          
-          <div className="mt-4">
-            <div className="flex justify-between items-baseline mb-2">
-              <div className="text-sm text-gray-400">Latest Sale Price</div>
-              <div className="text-2xl font-medium text-white">${Math.round(priceHistory.pricePoints[priceHistory.pricePoints.length - 1].price)}</div>
-            </div>
-            <PriceHistoryChart priceHistory={priceHistory} />
-          </div>
-
+    <div className="bg-gray-50 rounded-lg shadow-xl overflow-hidden border border-gray-200">
+      <div className="p-6">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-6">
           <div>
-            <h3 className="text-lg text-white mb-4">12-Month Historical</h3>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-gray-800/50 rounded-lg p-4">
-                <div className="text-2xl text-white font-medium mb-1">
-                  ${Math.round(priceHistory.lowestPrice)} - ${Math.round(priceHistory.highestPrice)}
-                </div>
-                <div className="text-sm text-gray-400">12-Month Trade Range</div>
-              </div>
-              <div className="bg-gray-800/50 rounded-lg p-4">
-                <div className="text-2xl text-white font-medium mb-1">
-                  ${Math.round(priceHistory.averagePrice)}
-                </div>
-                <div className="text-sm text-gray-400">Average Sale Price</div>
-              </div>
-              <div className="bg-gray-800/50 rounded-lg p-4">
-                <div className="text-2xl text-white font-medium mb-1">
-                  ${Math.round(priceHistory.lowestPrice)}
-                </div>
-                <div className="text-sm text-gray-400">Lowest Sale Price</div>
-              </div>
-            </div>
+            <h1 className="text-2xl font-bold text-gray-900">{wheel.name}</h1>
+            <p className="text-gray-500 mt-1">
+              {wheel.brand} {wheel.model} {wheel.finish && `- ${wheel.finish}`}
+            </p>
           </div>
-        </CardContent>
-      </Card>
+          <div className="text-right">
+            <div className="text-2xl font-bold text-gray-900">
+              ${loading ? "..." : priceHistory?.averagePrice || wheel.currentPrice}
+            </div>
+            <p className="text-gray-500 text-sm">Average Sales Price</p>
+          </div>
+        </div>
 
-      {showSales && <SalesHistory wheelId={wheel.id} />}
+        <div className="mt-8">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-medium text-gray-900">Price History</h2>
+            <TimeRangeSelector
+              selectedRange={timeRange}
+              onRangeChange={(range: TimeRange) => setTimeRange(range)}
+            />
+          </div>
+
+          <div className="h-64 mt-4 mb-8 relative">
+            {loading ? (
+              <div className="flex h-full items-center justify-center">
+                <div className="text-gray-500">Loading price data...</div>
+              </div>
+            ) : error ? (
+              <div className="flex h-full items-center justify-center">
+                <div className="text-red-500">Error loading price data</div>
+              </div>
+            ) : priceHistory ? (
+              <PriceHistoryChart priceHistory={priceHistory} />
+            ) : (
+              <div className="flex h-full items-center justify-center">
+                <div className="text-gray-500">No price data available</div>
+              </div>
+            )}
+          </div>
+
+          {priceHistory && <PriceStatistics priceHistory={priceHistory} />}
+
+          <div className="mt-8">
+            <h2 className="text-xl font-medium text-gray-900 mb-4">Recent Sales</h2>
+            {loading ? (
+              <div className="text-gray-500">Loading sales data...</div>
+            ) : priceHistory ? (
+              <SalesHistory wheelId={wheel.id} />
+            ) : (
+              <div className="text-gray-500">No sales data available</div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 } 

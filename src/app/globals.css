@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 @import "tailwindcss";
 
 :root {
@@ -37,8 +41,10 @@ body {
 }
 
 .animate-marquee {
-  animation-name: marquee;
-  animation-duration: 60s;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
+  animation: marquee 30s linear infinite;
+}
+
+/* Hide the "Latest Sale Price" text that's automatically added by Chart.js */
+.text-sm.text-gray-500.absolute.top-0.left-0 {
+  display: none !important;
 }

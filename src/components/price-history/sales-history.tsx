@@ -1,93 +1,119 @@
 "use client";
 
-import { format } from "date-fns";
-import { generateMockPriceHistory } from "@/lib/mock-data";
+import { format, parseISO } from "date-fns";
+import { usePriceHistory } from "@/lib/hooks";
+import { AuctionResult } from "@/lib/types";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 interface SalesHistoryProps {
   wheelId: string;
 }
 
-interface Sale {
-  date: Date;
-  price: number;
-  condition: string;
-  seller: string;
-}
-
-// Helper function to create a deterministic hash from a string
-function hashCode(str: string): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
-  }
-  return hash;
-}
-
-// Seeded random number generator (0-1)
-function seededRandom(seed: number): number {
-  const x = Math.sin(seed) * 10000;
-  return x - Math.floor(x);
-}
-
 export function SalesHistory({ wheelId }: SalesHistoryProps) {
-  // Generate mock sales data based on price history
-  const generateMockSales = (wheelId: string): Sale[] => {
-    const priceHistory = generateMockPriceHistory(wheelId, "3m");
-    const conditions = ["New", "Like New", "Excellent", "Good", "Fair"];
-    const sellers = ["WheelDealz", "TireKingdom", "AutoZone", "PerformancePlus", "WheelWarehouse"];
+  const [auctionResults, setAuctionResults] = useState<AuctionResult[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { data: priceHistory, loading: priceHistoryLoading } = usePriceHistory(wheelId);
+  
+  // Fetch detailed auction results for wheels with real data
+  useEffect(() => {
+    async function fetchAuctionData() {
+      // Only fetch for wheels with dedicated API endpoints
+      if (wheelId !== 'bbsE88' && wheelId !== 'bbsRS') return;
+      
+      try {
+        const endpoint = wheelId === 'bbsE88' ? '/api/wheels/bbs-e88' : '/api/wheels/bbs-rs';
+        const response = await axios.get(endpoint);
+        if (response.data.success) {
+          setAuctionResults(response.data.data.results);
+        }
+      } catch (error) {
+        console.error(`Error fetching auction results for ${wheelId}:`, error);
+      } finally {
+        setLoading(false);
+      }
+    }
     
-    // Create 10 sales from the last 10 price points
-    return priceHistory.pricePoints.slice(-10).map((point, index) => {
-      const date = new Date(point.date);
-      
-      // Use deterministic selection based on wheelId and index
-      const seed = hashCode(wheelId + index.toString());
-      const conditionIndex = Math.floor(seededRandom(seed) * conditions.length);
-      const sellerIndex = Math.floor(seededRandom(seed + 1) * sellers.length);
-      
-      // Add some deterministic variation to the price
-      const priceVariation = (seededRandom(seed + 2) * 0.1) - 0.05; // -5% to +5%
-      const adjustedPrice = point.price * (1 + priceVariation);
-      
-      return {
-        date,
-        price: Math.round(adjustedPrice),
-        condition: conditions[conditionIndex],
-        seller: sellers[sellerIndex]
-      };
-    }).reverse(); // Most recent first
-  };
+    fetchAuctionData();
+  }, [wheelId]);
   
-  const sales = generateMockSales(wheelId);
-  
-  return (
-    <div className="mt-6 bg-gray-900 border border-gray-800 rounded-lg p-6">
-      <h3 className="text-xl text-white mb-4">Recent Sales</h3>
-      
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-800">
-              <th className="text-left p-3 text-gray-400">Date</th>
-              <th className="text-left p-3 text-gray-400">Price</th>
-              <th className="text-left p-3 text-gray-400">Condition</th>
-              <th className="text-left p-3 text-gray-400">Seller</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sales.map((sale, index) => (
-              <tr key={index} className="border-b border-gray-800 hover:bg-gray-800/50">
-                <td className="p-3 text-gray-300">{format(sale.date, "MMM d, yyyy")}</td>
-                <td className="p-3 text-gray-300">${sale.price}</td>
-                <td className="p-3 text-gray-300">{sale.condition}</td>
-                <td className="p-3 text-gray-300">{sale.seller}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+  if (loading || priceHistoryLoading) {
+    return <div className="text-gray-500">Loading sales data...</div>;
+  }
+
+  if (!priceHistory) {
+    return <div className="text-gray-500">No sales data available</div>;
+  }
+
+  // For wheels with detailed auction data, display it
+  if (wheelId === 'bbsE88' || wheelId === 'bbsRS') {
+    // Get top 5 most recent auctions
+    const recentAuctions = [...auctionResults]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5);
+    
+    // If no auction results from the API, fallback to using priceHistory
+    const displayAuctions = recentAuctions.length > 0 
+      ? recentAuctions 
+      : priceHistory.pricePoints.slice(0, 5).map(point => ({
+          date: point.date,
+          title: `${wheelId === 'bbsE88' ? 'BBS E88' : 'BBS RS'} Wheels (Sold: ${format(parseISO(point.date), 'MMM d, yyyy')})`,
+          price: point.price,
+          link: undefined // Add link property with undefined value
+        }));
+
+    return (
+      <div className="space-y-4">
+        {displayAuctions.map((auction, index) => {
+          // Keep titles without excessive processing
+          // Only remove the "and " prefix if present
+          const simplifiedTitle = auction.title.startsWith('and ') 
+            ? auction.title.replace('and ', '')
+            : auction.title;
+            
+          return (
+            <div key={index} className="bg-gray-100 rounded-lg p-4 border border-gray-200">
+              <div className="flex justify-between items-center">
+                <div>
+                  <div className="text-gray-800 font-medium">{simplifiedTitle}</div>
+                  <div className="text-sm text-gray-500">
+                    {format(parseISO(auction.date), 'MMM d, yyyy')}
+                  </div>
+                </div>
+                <div className="text-xl text-gray-900 font-medium">${auction.price.toLocaleString()}</div>
+              </div>
+              {auction.link && (
+                <div className="mt-2">
+                  <a 
+                    href={auction.link} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-emerald-600 hover:text-emerald-700 text-sm"
+                  >
+                    View Listing →
+                  </a>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
+    );
+  }
+  
+  // For other wheels, display simpler sales history
+  return (
+    <div className="space-y-4">
+      {priceHistory.pricePoints.slice(-5).reverse().map((point, index) => (
+        <div key={index} className="bg-gray-100 rounded-lg p-4 border border-gray-200">
+          <div className="flex justify-between items-center">
+            <div className="text-sm text-gray-500">
+              {format(parseISO(point.date), 'MMM d, yyyy')}
+            </div>
+            <div className="text-xl text-gray-900 font-medium">${point.price}</div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 } 

@@ -1,4 +1,5 @@
 import { format, subDays } from 'date-fns';
+import { bbsE88Wheel, bbsRSWheel } from './scraper';
 
 export interface Wheel {
   id: string;
@@ -25,141 +26,8 @@ export interface PriceHistory {
   averagePrice: number;
 }
 
-// Mock wheels data
-export const wheels: Wheel[] = [
-  {
-    id: 'w12345',
-    name: 'BBS CH-R 19"',
-    brand: 'BBS',
-    model: 'CH-R',
-    size: '19"',
-    finish: '',
-    currentPrice: 599,
-    retailPrice: 699,
-    description: 'The BBS CH-R is a lightweight, high-strength wheel designed for performance vehicles. Its iconic Y-spoke design makes it a popular choice among enthusiasts.'
-  },
-  {
-    id: 'w12346',
-    name: 'Enkei RPF1 17"',
-    brand: 'Enkei',
-    model: 'RPF1',
-    size: '17"',
-    finish: '',
-    currentPrice: 385,
-    retailPrice: 425,
-    description: 'The Enkei RPF1 is a legendary lightweight wheel popular in motorsports. Its simple spoke design and impressive strength-to-weight ratio make it ideal for track and street use.'
-  },
-  {
-    id: 'w12347',
-    name: 'HRE P101 20"',
-    brand: 'HRE',
-    model: 'P101',
-    size: '20"',
-    finish: '',
-    currentPrice: 1475,
-    retailPrice: 1650,
-    description: 'The HRE P101 is a premium forged wheel with a classic five-spoke design. Each wheel is custom-made to order with precision engineering and exceptional attention to detail.'
-  },
-  {
-    id: 'w12348',
-    name: 'Volk TE37 18"',
-    brand: 'Volk Racing',
-    model: 'TE37',
-    size: '18"',
-    finish: '',
-    currentPrice: 850,
-    retailPrice: 950,
-    description: 'The Volk TE37 is an iconic six-spoke wheel known for its rigidity and lightweight design. Popular in motorsports and street applications.'
-  },
-  {
-    id: 'w12349',
-    name: 'Rotiform BLQ 19"',
-    brand: 'Rotiform',
-    model: 'BLQ',
-    size: '19"',
-    finish: '',
-    currentPrice: 429,
-    retailPrice: 469,
-    description: 'The Rotiform BLQ features a clean block design with a contemporary twist. Its mesh-like appearance offers a bold statement for European and luxury vehicles.'
-  },
-  {
-    id: 'w12350',
-    name: 'Work Meister S1 18"',
-    brand: 'Work',
-    model: 'Meister S1',
-    size: '18"',
-    finish: 'Polished',
-    currentPrice: 1250,
-    retailPrice: 1399,
-    description: 'The Work Meister S1 is a three-piece forged wheel with a timeless design. Its stepped lip and exposed hardware make it a favorite in the JDM scene.'
-  },
-  {
-    id: 'w12351',
-    name: 'Advan RGIII 17"',
-    brand: 'Advan',
-    model: 'RGIII',
-    size: '17"',
-    finish: 'Racing Gold',
-    currentPrice: 675,
-    retailPrice: 725,
-    description: 'The Advan RGIII features a classic six-spoke design optimized for motorsports. Its lightweight construction and distinctive Racing Gold finish make it instantly recognizable.'
-  },
-  {
-    id: 'w12352',
-    name: 'OZ Ultraleggera 18"',
-    brand: 'OZ Racing',
-    model: 'Ultraleggera',
-    size: '18"',
-    finish: 'Matte Black',
-    currentPrice: 520,
-    retailPrice: 580,
-    description: 'The OZ Ultraleggera lives up to its name with an ultra-lightweight design. Its multi-spoke pattern provides excellent brake cooling and structural integrity.'
-  },
-  {
-    id: 'w12353',
-    name: 'Weds Kranze LXZ 19"',
-    brand: 'Weds',
-    model: 'Kranze LXZ',
-    size: '19"',
-    finish: 'Gloss Black',
-    currentPrice: 890,
-    retailPrice: 950,
-    description: 'The Weds Kranze LXZ features an intricate multi-spoke design with a deep concave profile. Its aggressive styling makes it perfect for VIP and luxury builds.'
-  },
-  {
-    id: 'w12354',
-    name: 'Konig Hypergram 17"',
-    brand: 'Konig',
-    model: 'Hypergram',
-    size: '17"',
-    finish: 'Race Bronze',
-    currentPrice: 210,
-    retailPrice: 240,
-    description: 'The Konig Hypergram offers excellent performance at an accessible price point. Its flow-formed construction provides strength without excessive weight.'
-  },
-  {
-    id: 'w12355',
-    name: 'SSR Professor SP1 20"',
-    brand: 'SSR',
-    model: 'Professor SP1',
-    size: '20"',
-    finish: 'Diamond Cut',
-    currentPrice: 1100,
-    retailPrice: 1250,
-    description: 'The SSR Professor SP1 is a premium three-piece wheel with a sophisticated mesh design. Its precision engineering and flawless finish justify its premium price.'
-  },
-  {
-    id: 'w12356',
-    name: 'Rays Gram Lights 57DR 18"',
-    brand: 'Rays',
-    model: 'Gram Lights 57DR',
-    size: '18"',
-    finish: 'Winning Blue',
-    currentPrice: 780,
-    retailPrice: 850,
-    description: 'The Rays Gram Lights 57DR combines lightweight construction with striking aesthetics. Its distinctive spoke design and vibrant color options make it stand out.'
-  }
-];
+// Mock wheels data - only BBS RS as requested
+export const wheels: Wheel[] = [bbsRSWheel];
 
 // Generate mock price history data with realistic market patterns
 export function generateMockPriceHistory(wheelId: string, timeRange: string): PriceHistory {
@@ -302,4 +170,9 @@ function hashCode(str: string): number {
 function seededRandom(seed: number): number {
   const x = Math.sin(seed) * 10000;
   return x - Math.floor(x);
+}
+
+// Additional helper to get all wheels including featured ones
+export function getAllWheels(): Wheel[] {
+  return [bbsE88Wheel, ...wheels];
 } 

@@ -19,6 +19,35 @@ export function PriceHistoryChart({ priceHistory }: PriceHistoryChartProps) {
 
   useEffect(() => {
     setIsClient(true);
+    
+    // Find and remove the "Latest Sale Price" text if it exists
+    // This removes any dynamic text added by Chart.js or other libraries
+    const removeLatestSalePrice = () => {
+      const latestSalePriceElements = document.querySelectorAll('div.text-sm.text-gray-500.absolute.top-0.left-0');
+      latestSalePriceElements.forEach(el => {
+        if (el.textContent?.includes('Latest Sale Price')) {
+          el.remove();
+        }
+      });
+    };
+    
+    // Run once on initial render
+    removeLatestSalePrice();
+    
+    // Set up a MutationObserver to catch any dynamically added elements
+    const observer = new MutationObserver(() => {
+      removeLatestSalePrice();
+    });
+    
+    // Start observing the document body for DOM changes
+    observer.observe(document.body, { 
+      childList: true,
+      subtree: true 
+    });
+    
+    return () => {
+      observer.disconnect();
+    };
   }, []);
 
   return (
