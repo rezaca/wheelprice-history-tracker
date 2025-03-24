@@ -9,12 +9,15 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Formats a price as a currency string
+ * Formats a price as a currency string with consistent formatting
  */
-export function formatPrice(price: number): string {
+export function formatPrice(price: number | undefined | null): string {
+  if (price === undefined || price === null) return '$0';
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
   }).format(price);
 }
 

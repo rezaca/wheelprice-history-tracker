@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Wheel } from "@/lib/mock-data";
 import { Card } from "@/components/ui/card";
+import { formatPrice } from "@/lib/utils";
 
 interface WheelCardProps {
   wheel: Wheel;
@@ -20,8 +21,9 @@ export function WheelCard({ wheel, className }: WheelCardProps) {
           <h3 className="text-base text-gray-900 font-semibold">{name}</h3>
           
           <div className="mt-4 flex flex-col">
-            <div className="flex items-center">
-              <span className="text-lg font-bold text-gray-900">${currentPrice}</span>
+            <div className="flex flex-col">
+              <span className="text-lg font-bold text-gray-900">{formatPrice(currentPrice)}</span>
+              <span className="text-xs text-gray-500">Latest Sale</span>
             </div>
           </div>
           
