@@ -75,7 +75,7 @@ export default function Home() {
                 <div className="bg-white p-4 rounded-lg shadow-sm">
                   <p className="text-sm text-gray-500">Latest Sale ({formattedDate})</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {loading ? "Loading..." : `$${bbsE88Wheel.currentPrice.toLocaleString()}`}
+                    {loading ? "Loading..." : `$${bbsE88Data?.pricePoints[0]?.price.toLocaleString() ?? bbsE88Wheel.currentPrice.toLocaleString()}`}
                   </p>
                 </div>
               </div>

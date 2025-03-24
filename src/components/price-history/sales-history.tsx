@@ -13,6 +13,8 @@ interface SalesHistoryProps {
 export function SalesHistory({ wheelId }: SalesHistoryProps) {
   const [auctionResults, setAuctionResults] = useState<AuctionResult[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const { data: priceHistory, loading: priceHistoryLoading } = usePriceHistory(wheelId);
   
   // Fetch detailed auction results for wheels with real data
@@ -47,26 +49,25 @@ export function SalesHistory({ wheelId }: SalesHistoryProps) {
 
   // For wheels with detailed auction data, display it
   if (wheelId === 'bbsE88' || wheelId === 'bbsRS') {
-    // Get top 5 most recent auctions
-    const recentAuctions = [...auctionResults]
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 5);
+    // Sort auctions by date
+    const sortedAuctions = [...auctionResults]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     
-    // If no auction results from the API, fallback to using priceHistory
-    const displayAuctions = recentAuctions.length > 0 
-      ? recentAuctions 
-      : priceHistory.pricePoints.slice(0, 5).map(point => ({
-          date: point.date,
-          title: `${wheelId === 'bbsE88' ? 'BBS E88' : 'BBS RS'} Wheels (Sold: ${format(parseISO(point.date), 'MMM d, yyyy')})`,
-          price: point.price,
-          link: undefined // Add link property with undefined value
-        }));
+    // Calculate pagination
+    const totalPages = Math.ceil(sortedAuctions.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    
+    // Get current page's auctions
+    const displayAuctions = sortedAuctions.slice(startIndex, endIndex);
 
     return (
       <div className="space-y-4">
+        <div className="text-sm text-gray-500 mb-4">
+          Showing {startIndex + 1}-{Math.min(endIndex, sortedAuctions.length)} of {sortedAuctions.length} results
+        </div>
+        
         {displayAuctions.map((auction, index) => {
-          // Keep titles without excessive processing
-          // Only remove the "and " prefix if present
           const simplifiedTitle = auction.title.startsWith('and ') 
             ? auction.title.replace('and ', '')
             : auction.title;
@@ -97,6 +98,28 @@ export function SalesHistory({ wheelId }: SalesHistoryProps) {
             </div>
           );
         })}
+        
+        {totalPages > 1 && (
+          <div className="flex justify-center space-x-2 mt-6">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-4 py-2 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <span className="px-4 py-2 text-sm bg-white border border-gray-300 rounded-md">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
     );
   }
